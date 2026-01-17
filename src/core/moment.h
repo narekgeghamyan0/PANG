@@ -21,6 +21,9 @@ public:
     const std::string& getText() const;
     const std::string& getTitle() const;
     MomentType getType() const;
+    uint32_t getId() const;
+    bool operator<(const Moment& other) const;
+    bool operator==(const Moment& other) const;
     void updateText(const std::string& new_text);
     void updateTitle(const std::string& new_title);
     void updateType(MomentType new_type);
@@ -29,9 +32,11 @@ public:
     void removeMedia();
     std::chrono::system_clock::time_point getMomentCreationTime() const;
 private:
+    static uint32_t generateId();
+private:
     std::string text_;
     std::string title_;
-    std::optional<uint32_t> id_;
+    uint32_t id_;
     MomentType type_;
     std::vector<uint32_t> media_ids;
     std::chrono::system_clock::time_point created_at_;

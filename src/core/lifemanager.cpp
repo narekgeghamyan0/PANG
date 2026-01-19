@@ -2,7 +2,10 @@
 
 void LifeManager::addMoment(const Moment& moment)
 {
-    moments_.emplace(moment.getId(), moment);
+    if (!moment.getId().has_value()) {
+        throw std::invalid_argument("Moment must have an id before adding to LifeManager");
+    }
+    moments_.emplace(moment.getId().value(), moment);
 }
 
 bool LifeManager::removeMoment(uint32_t moment_id)

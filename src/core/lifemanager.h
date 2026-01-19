@@ -2,6 +2,9 @@
 #define LIFEMANAGER_H
 
 #include "moment.h"
+#include <unordered_map>
+#include <vector>
+#include <functional>
 
 #include <set>
 

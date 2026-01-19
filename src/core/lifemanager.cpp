@@ -18,3 +18,42 @@ const Moment& LifeManager::getMoment(const uint32_t moment_id) const
 
     return it->second;
 }
+
+std::vector<std::reference_wrapper<const Moment>> LifeManager::getAllMoments() const
+{
+    std::vector<std::reference_wrapper<const Moment>> all_moments;
+    for (const auto& [id, moment] : moments_)
+    {
+        all_moments.push_back(moment);
+    }
+    return all_moments;
+}
+
+const Moment& LifeManager::getLastMoment() const
+{
+    if (moments_.empty())
+        throw std::runtime_error("No moments available");
+
+    auto it = std::max_element(moments_.begin(), moments_.end(),
+        [](const auto& a, const auto& b) {
+            return a.second.getMomentCreationTime() < b.second.getMomentCreationTime();
+        });
+
+    if (it == moments_.end())
+        throw std::runtime_error("No moments available");
+
+    return it->second;
+}
+
+std::vector<std::reference_wrapper<const Moment>> LifeManager::findByType(const MomentType type) const
+{
+    std::vector<std::reference_wrapper<const Moment>> res;
+    for (const auto& [id, moment] : moments_)
+    {
+        if (type == moment.getType())
+        {
+            res.push_back(moment);
+        }
+    }
+    return res;
+}

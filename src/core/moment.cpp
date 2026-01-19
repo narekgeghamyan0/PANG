@@ -1,9 +1,9 @@
 #include "moment.h"
 
 Moment::Moment(std::string title, std::string text, MomentType type)
-      : text_(std::move(text)), title_(std::move(title)), type_(type),
+      : text_(std::move(text)), title_(std::move(title)), id_(std::nullopt), type_(type),
+        media_ids(),
         created_at_(std::chrono::system_clock::now()), updated_at_(created_at_)
-
 {
 }
 
@@ -30,7 +30,7 @@ void Moment::updateType(MomentType new_type)
 
 bool Moment::isSaved() const
 {
-    return id_;
+    return id_.has_value();
 }
 
 std::chrono::system_clock::time_point Moment::getMomentCreationTime() const
@@ -44,7 +44,7 @@ void Moment::updateText(const std::string& new_text)
     updated_at_ = std::chrono::system_clock::now();
 }
 
-uint32_t Moment::getId() const
+std::optional<uint32_t> Moment::getId() const
 {
     return id_;
 }
@@ -57,26 +57,33 @@ void Moment::updateTitle(const std::string& new_title)
 
 bool Moment::operator<(const Moment& other) const
 {
-    return id_ < other.id_;
+    if (id_ && other.id_) return id_.value() < other.id_.value();
+    return false;
 }
 
 bool Moment::operator==(const Moment& other) const
 {
-    return id_ == other.id_;
+    if (id_ && other.id_) return id_.value() == other.id_.value();
+    return false;
 }
 
-uint32_t Moment::generateId()
+/// @attention This function will be used when a moment is loaded into the database;
+///            at that point, the moment will have a unique ID.
+void Moment::generateId()
 {
     static uint32_t current_id = 0;
-    return ++current_id;
+    id_ = ++current_id;
 }
 
-void Moment::addMedia()
+void Moment::setId(uint32_t id)
 {
-    // TODO Narek: Implement functional for add new media.
+    id_ = id;
 }
 
-void Moment::removeMedia()
+void Moment::addMedia(uint32_t media_id)
 {
-    // TODO Narek: Implement functional for remove media.
+}
+
+void Moment::removeMedia(uint32_t media_id)
+{
 }

@@ -57,3 +57,19 @@ std::vector<std::reference_wrapper<const Moment>> LifeManager::findByType(const 
     }
     return res;
 }
+
+uint32_t LifeManager::getMomentCount() const
+{
+    return moments_.size();
+}
+
+uint32_t LifeManager::getMomentCountByType(MomentType type) const
+{
+    uint32_t count = 0;
+    for (const auto& [id, moment] : moments_)
+    {
+        if (moment.getType() == type)
+            ++count;
+    }
+    return count;
+}

@@ -1,4 +1,5 @@
 #include "core/lifemanager.h"
+#include "db/dataBase.h"
 
 int main()
 {

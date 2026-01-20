@@ -4,7 +4,8 @@ CXXFLAGS = -std=c++20 -Wall -Wextra -I./src
 SRC = \
     src/main.cpp \
     src/core/moment.cpp \
-	src/core/lifemanager.cpp
+	src/core/lifemanager.cpp \
+	src/core/user.cpp
 
 BIN_DIR = bin
 TARGET = $(BIN_DIR)/pang

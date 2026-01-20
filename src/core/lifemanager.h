@@ -8,6 +8,7 @@
 
 #include <set>
 
+/// @details At the moment, the LifeManager class owns only moments. It will be extended in the future.
 class LifeManager
 {
 public:

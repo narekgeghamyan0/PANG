@@ -1,24 +1,54 @@
 CXX = g++
+
+BREW_PREFIX := $(shell brew --prefix 2>/dev/null)
+
 CXXFLAGS = -std=c++20 -Wall -Wextra -I./src
-CXXSQL= -l sqlite3
+ifeq ($(BREW_PREFIX),)
+    # Linux case
+else
+    # macOS case
+    CXXFLAGS += -I$(BREW_PREFIX)/include
+endif
+
+CXXSQL = -lsqlite3
 
 SRC = \
     src/main.cpp \
     src/core/moment.cpp \
-	src/core/lifemanager.cpp \
-	src/core/user.cpp \
-	src/db/dataBase.cpp
+    src/core/lifemanager.cpp \
+    src/core/user.cpp \
+    src/db/dataBase.cpp
+
+CORE_SRC = \
+    src/core/moment.cpp \
+    src/core/lifemanager.cpp \
+    src/core/user.cpp
+
+TEST_SRC = \
+    tests/test_moment.cpp \
+	tests/test_user.cpp \
+	tests/test_lifemanager.cpp
 
 BIN_DIR = bin
-TARGET = $(BIN_DIR)/pang
+APP_TARGET = $(BIN_DIR)/pang
+TEST_TARGET = $(BIN_DIR)/tests
 
-all: $(TARGET)
+.PHONY: all app tests test clean
+
+all: app
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
 
-$(TARGET): $(BIN_DIR) $(SRC)
-	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET) $(CXXSQL)
+app: $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(SRC) -o $(APP_TARGET) $(CXXSQL)
+
+tests: $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $(CORE_SRC) $(TEST_SRC) \
+	    -o $(TEST_TARGET)
+
+test: tests
+	./$(TEST_TARGET)
 
 clean:
 	rm -rf $(BIN_DIR)

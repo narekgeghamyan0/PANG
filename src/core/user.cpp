@@ -31,6 +31,12 @@ User::rename(const std::string& new_name)
     name_ = new_name;
 }
 
+void
+User::changeBio(const std::string& new_bio)
+{
+    bio_ = new_bio;
+}
+
 std::chrono::system_clock::time_point
 User::getCreatedAt() const
 {

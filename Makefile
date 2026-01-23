@@ -7,6 +7,7 @@ SRC = \
     src/core/moment.cpp \
 	src/core/lifemanager.cpp \
 	src/core/user.cpp \
+	src/core/maincontroller.cpp \
 	src/db/dataBase.cpp
 
 BIN_DIR = bin

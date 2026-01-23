@@ -9,7 +9,8 @@
 class User
 {
 public:
-    User(const std::string& name, const std::string& bio = "", const std::string& profile_picture_path = "");
+    User(const std::string& name, const std::string& login, const std::string& pass,
+         const std::string& bio = "", const std::string& profile_picture_path = "");
     const std::string& getName() const;
     void setId(uint32_t id);
     std::optional<uint32_t> getId() const;
@@ -25,12 +26,17 @@ public:
     // void addMediaToMoment(uint32_t moment_id, uint32_t media_id); /// @todo Narek
     // void removeMediaFromMoment(uint32_t moment_id, uint32_t media_id); /// @todo Narek
 private:
+    void  setLogin(const std::string& email);
+    void  setPass(const std::string& pass);
+private:
     std::string name_;
     std::optional<uint32_t> id_;
     LifeManager life_;
     std::chrono::system_clock::time_point created_at_;
     std::string bio_;
     std::string profile_picture_path_;
+    std::string email_;
+    std::string password_;
 };
 
 #endif /// USER_H

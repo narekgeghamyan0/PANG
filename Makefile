@@ -15,10 +15,10 @@ CXXSQL = -lsqlite3
 SRC = \
     src/main.cpp \
     src/core/moment.cpp \
-    src/core/lifemanager.cpp \
-    src/core/user.cpp \
-    src/db/dataBase.cpp
-
+	src/core/lifemanager.cpp \
+	src/core/user.cpp \
+	src/core/maincontroller.cpp \
+	src/db/dataBase.cpp
 CORE_SRC = \
     src/core/moment.cpp \
     src/core/lifemanager.cpp \

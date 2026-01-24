@@ -1,7 +1,8 @@
 #include "user.h"
 
-User::User(const std::string& name, const std::string& bio, const std::string& profile_picture_path)
-    : name_(name), id_(std::nullopt), life_(), created_at_(std::chrono::system_clock::now()),
+User::User(const std::string& name, const std::string& login, const std::string& pass,
+           const std::string& bio, const std::string& profile_picture_path)
+    : name_(name), email_(login), password_(pass), id_(std::nullopt), life_(), created_at_(std::chrono::system_clock::now()),
       bio_(bio), profile_picture_path_(profile_picture_path)
 {
 
@@ -77,4 +78,18 @@ const std::string&
 User::getProfilePicturePath() const
 {
     return profile_picture_path_;
+}
+
+void
+User::setLogin(const std::string& email)
+{
+    /// @todo Implement email validation check.
+    email_ = email;
+}
+
+void
+User::setPass(const std::string& pass)
+{
+    /// @todo Implement password requirement check.
+    password_ = pass;
 }

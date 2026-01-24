@@ -1,4 +1,17 @@
 #include "db/dataBase.h"
+struct callbackForCheck
+{ 
+    void operator()(void* data, int argc, char** argv, char** azColName) {
+        int i;
+        fprintf(stderr, "%s: ", (const char*)data);
+
+        for (i = 0; i < argc; i++) {
+            printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+        }
+
+        printf("\n");
+    }
+};
 
 DataBase::DataBase(const string& db_path)
     : db_(nullptr)
@@ -18,20 +31,20 @@ DataBase::~DataBase()
 }
 
 void
-DataBase::createDataBase(const string& db_path)
+DataBase::executeCommand(const string& command, sqlite3_stmt* stmt)
 {
-    if (sqlite3_open(db_path.c_str(), &db_) != SQLITE_OK) {
-        throw std::runtime_error("ERROR 1: Can't create database");
+    char* errMsg = nullptr;
+    int rd = sqlite3_exec(db_, command.c_str(), 0, stmt, &errMsg);
+    if (rd != SQLITE_OK) {
+        throw std::runtime_error("ERROR 2: Can't execute " + command);
     }
 }
 
 void
-DataBase::executeCommand(const string& command)
+DataBase::createDataBase(const string& db_path)
 {
-    char* errMsg = nullptr;
-    int rd = sqlite3_exec(db_, command.c_str(), nullptr, nullptr, &errMsg);
-    if (rd != SQLITE_OK) {
-        throw std::runtime_error("ERROR 2: Can't execute " + command);
+    if (sqlite3_open(db_path.c_str(), &db_) != SQLITE_OK) {
+        throw std::runtime_error("ERROR 1: Can't create database");
     }
 }
 
@@ -55,9 +68,19 @@ DataBase::createMemoryTable()
 }
 
 void
-DataBase::createQuery(string&& item, string&& column, ID id, string& query)
+DataBase::createPrintAllQuery(const string& tableName, string& query)
 {
-    query.reserve(item.size() + column.size() + 32);
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("SELECT * FROM ")
+         .append(tableName)
+         .append(";");
+}
+
+void
+DataBase::createSelectQuery(string&& item, string&& column, ID id, string& query)
+{
+    query.reserve(QUERY_MAX_SIZE);
 
     query.append("SELECT ")
          .append(item)
@@ -69,35 +92,81 @@ DataBase::createQuery(string&& item, string&& column, ID id, string& query)
 }
 
 void
+DataBase::createInsertQuery(const string& tableName, ID id, const string& image_path, const string& note, string& query)
+{
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("INSERT INTO")
+         .append(tableName)
+         .append(" VALUES(")
+         .append(std::to_string(id))
+         .append(", ")
+         .append(image_path)
+         .append(", ")
+         .append(note)
+         .append(");");
+}
+
+void
+DataBase::createEraseQuery(const string& tableName, ID id, string& query)
+{
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("DELETE FROM ")
+         .append(tableName)
+         .append(" WHERE ID = ")
+         .append(std::to_string(id))
+         .append("; ");
+}
+
+void
 DataBase::createQueryForImage(ID id, string& query)
 {
-    return createQuery("path", "images", id, query);
+    return createSelectQuery("path", "images", id, query);
 }
 
 void
 DataBase::createQueryForNote(ID id, string& query)
 {
-    return createQuery("note", "notes", id, query);
+    return createSelectQuery("note", "notes", id, query);
 }
 
-// const string&
-// DataBase::getImagePath(ID id) const
-// {
-//     if (!db_) {
-//         return "";
-//     }
-//     string query;
-//     createQueryForImage(id, query);
-//     return "TODO: Image path from db";
-// }
+void
+DataBase::insert(const string& tableName, ID id, const string& image_path, const string& note)
+{
+    string query;
+    createInsertQuery(tableName, id, image_path, note, query);
+    executeCommand(query);
+}
 
-// const string&
-// DataBase::getNote(ID id) const
-// {
-//     if (!db_) {
-//         return "";
-//     }
-//     string query;
-//     createQueryForNote(id, string& query);
-//     return "TODO: Note from db";
-// }
+void
+DataBase::erase(const string& tableName, ID id)
+{
+    string query;
+    createEraseQuery(tableName, id, query);
+    executeCommand(query);
+}
+
+string
+DataBase::getImagePath(ID id)
+{
+    if (!db_) {
+        return "";
+    }
+    string query;
+    createQueryForImage(id, query);
+    // sqlite3_stmt* stmt;
+    // executeCommand(query, stmt);
+    return "TODO: Image path from db";
+}
+
+string
+DataBase::getNote(ID id)
+{
+    if (!db_) {
+        return "";
+    }
+    string query;
+    createQueryForNote(id, query);
+    return "TODO: Note from db";
+}

@@ -1,5 +1,5 @@
 #include "db/dataBase.h"
-struct callbackForCheck
+struct CallbackForCheck
 { 
     void operator()(void* data, int argc, char** argv, char** azColName) {
         int i;
@@ -11,7 +11,55 @@ struct callbackForCheck
 
         printf("\n");
     }
-};
+} callbackForCheck;
+
+
+template<typename CPP_Type>
+CPP_Type sqlite3_column(sqlite3_stmt* stpmt)
+{
+    return CPP_Type();
+}
+
+template<>
+int sqlite3_column<int>(sqlite3_stmt* stpmt)
+{
+    return sqlite3_column_int(stpmt, 0);
+}
+
+template<>
+double sqlite3_column<double>(sqlite3_stmt* stpmt)
+{
+    return sqlite3_column_double(stpmt, 0);
+}
+
+template<>
+ID sqlite3_column<ID>(sqlite3_stmt* stpmt)
+{
+    return static_cast<ID>(sqlite3_column_int64(stpmt, 0));
+}
+
+template<>
+string sqlite3_column<string>(sqlite3_stmt* stpmt)
+{
+    const unsigned char* text = sqlite3_column_text(stpmt, 0);
+    return string(reinterpret_cast<const char*>(text));
+}
+
+template<>
+std::vector<unsigned char> sqlite3_column<std::vector<unsigned char>>(sqlite3_stmt* stpmt)
+{
+    std::vector<unsigned char> data;
+    const void* blob = sqlite3_column_blob(stpmt, 0);
+    int size = sqlite3_column_bytes(stpmt, 0);
+
+    if (blob && size > 0) {
+        const unsigned char* bytes =
+            static_cast<const unsigned char*>(blob);
+
+        data.assign(bytes, bytes + size);
+    }
+    return data;
+}
 
 DataBase::DataBase(const string& db_path)
     : db_(nullptr)
@@ -30,11 +78,36 @@ DataBase::~DataBase()
     std::cout << "Opened Database Successfully!" << std::endl;
 }
 
+template<typename T>
 void
-DataBase::executeCommand(const string& command, sqlite3_stmt* stmt)
+DataBase::getFromDB(const string& query, ID id, T& result)
+{
+    sqlite3_stmt* stmt = nullptr;
+    // Prepare the SQL statement
+    if (sqlite3_prepare_v2(db_, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error("ERROR 3: Failed to prepare statement for query: " + query);
+    }
+
+    // Bind the ID parameter
+    // TODO: Need variatic template for different types, counts of arguments and sqlite3_bind_xxx functions
+    sqlite3_bind_int(stmt, 1, id);
+
+    // Execute the statement
+    if (sqlite3_step(stmt) != SQLITE_ROW) {
+        result = sqlite3_column<T>(stmt, 0);
+        sqlite3_finalize(stmt);
+        throw std::runtime_error("ERROR 4: Failed to execute statement for query: " + query);
+    }
+
+    // Finalize the statement to release resources
+    sqlite3_finalize(stmt);
+}
+
+void
+DataBase::executeCommand(const string& command)
 {
     char* errMsg = nullptr;
-    int rd = sqlite3_exec(db_, command.c_str(), 0, stmt, &errMsg);
+    int rd = sqlite3_exec(db_, command.c_str(), 0, nullptr, &errMsg);
     if (rd != SQLITE_OK) {
         throw std::runtime_error("ERROR 2: Can't execute " + command);
     }
@@ -155,8 +228,6 @@ DataBase::getImagePath(ID id)
     }
     string query;
     createQueryForImage(id, query);
-    // sqlite3_stmt* stmt;
-    // executeCommand(query, stmt);
     return "TODO: Image path from db";
 }
 

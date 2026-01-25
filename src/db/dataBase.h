@@ -3,13 +3,14 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 #include <sqlite3.h>
 
 #define QUERY_MAX_SIZE 256
 
-using string = std::string;
 using ID = size_t;
-using SQL_string = std::string;
+using string = std::string;
+using SQL_string = string;
 
 // SQL Keywords
 // TODO: Create queries using these keywords
@@ -49,8 +50,9 @@ public:
     string getNote(ID id);
 
 private:
+    template<typename T> void getFromDB(const string& query, ID id, T& result);
     void createDataBase(const string &db_path);
-    void executeCommand(const string& command, sqlite3_stmt* stmt = nullptr);
+    void executeCommand(const string& command);
     void createTable(string &&user);
     void createMemoryTable();
     void createPrintAllQuery(const string &tableName, string &query);

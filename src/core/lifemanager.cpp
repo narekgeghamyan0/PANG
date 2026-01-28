@@ -10,13 +10,13 @@ LifeManager::addMoment(const Moment& moment)
 }
 
 bool
-LifeManager::removeMoment(uint32_t moment_id)
+LifeManager::removeMoment(IdType moment_id)
 {
     return moments_.erase(moment_id) > 0;
 }
 
 const
-Moment& LifeManager::getMoment(const uint32_t moment_id) const
+Moment& LifeManager::getMoment(const IdType moment_id) const
 {
     auto it = moments_.find(moment_id);
     if (it == moments_.end())
@@ -67,16 +67,16 @@ LifeManager::findByType(const MomentType type) const
     return res;
 }
 
-uint32_t
+IdType
 LifeManager::getMomentCount() const
 {
     return moments_.size();
 }
 
-uint32_t
+IdType
 LifeManager::getMomentCountByType(MomentType type) const
 {
-    uint32_t count = 0;
+    IdType count = 0;
     for (const auto& [id, moment] : moments_)
     {
         if (moment.getType() == type)

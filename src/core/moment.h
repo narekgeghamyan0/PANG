@@ -22,26 +22,26 @@ public:
     const std::string& getText() const;
     const std::string& getTitle() const;
     MomentType getType() const;
-    std::optional<uint32_t> getId() const;
+    std::optional<IdType> getId() const;
     bool operator<(const Moment& other) const;
     bool operator==(const Moment& other) const;
     void updateText(const std::string& new_text);
     void updateTitle(const std::string& new_title);
     void updateType(MomentType new_type);
     bool isSaved() const;
-    void addMedia(uint32_t media_id);
-    void removeMedia(uint32_t media_id);
-    std::chrono::system_clock::time_point getMomentCreationTime() const;
-    void setId(uint32_t id);
+    void addMedia(IdType media_id);
+    void removeMedia(IdType media_id);
+    TimePoint getMomentCreationTime() const;
+    void setId(IdType id);
     void generateId();
 private:
     std::string text_;
     std::string title_;
-    std::optional<uint32_t> id_;
+    std::optional<IdType> id_;
     MomentType type_;
-    std::vector<uint32_t> media_ids;
-    std::chrono::system_clock::time_point created_at_;
-    std::chrono::system_clock::time_point updated_at_;
+    std::vector<IdType> media_ids;
+    TimePoint created_at_;
+    TimePoint updated_at_;
 };
 
 #endif // MOMENT_H

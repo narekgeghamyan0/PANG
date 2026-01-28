@@ -38,7 +38,7 @@ Moment::isSaved() const
     return id_.has_value();
 }
 
-std::chrono::system_clock::time_point
+TimePoint
 Moment::getMomentCreationTime() const
 {
     return created_at_;
@@ -51,7 +51,7 @@ Moment::updateText(const std::string& new_text)
     updated_at_ = std::chrono::system_clock::now();
 }
 
-std::optional<uint32_t>
+std::optional<IdType>
 Moment::getId() const
 {
     return id_;
@@ -83,22 +83,22 @@ Moment::operator==(const Moment& other) const
 void
 Moment::generateId()
 {
-    static uint32_t current_id = 0;
+    static IdType current_id = 0;
     id_ = ++current_id;
 }
 
 void
-Moment::setId(uint32_t id)
+Moment::setId(IdType id)
 {
     id_ = id;
 }
 
 void
-Moment::addMedia(uint32_t media_id)
+Moment::addMedia(IdType media_id)
 {
 }
 
 void
-Moment::removeMedia(uint32_t media_id)
+Moment::removeMedia(IdType media_id)
 {
 }

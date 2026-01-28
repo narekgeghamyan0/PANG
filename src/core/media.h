@@ -11,6 +11,10 @@ enum MediaType {
     Audio
 };
 
+/// Type aliases
+using TimePoint = std::chrono::system_clock::time_point;
+using IdType = uint32_t;
+
 class Media
 {
 public:
@@ -24,7 +28,7 @@ public:
     bool isAudio() const;
 private:
     MediaType type_;
-    std::optional<uint32_t> id_;
+    std::optional<IdType> id_;
     std::string filePath_;
 };
 

@@ -15,12 +15,12 @@ User::getName() const
 }
 
 void
-User::setId(uint32_t id)
+User::setId(IdType id)
 {
     id_ = id;
 }
 
-std::optional<uint32_t>
+std::optional<IdType>
 User::getId() const
 {
     return id_;
@@ -38,7 +38,7 @@ User::changeBio(const std::string& new_bio)
     bio_ = new_bio;
 }
 
-std::chrono::system_clock::time_point
+TimePoint
 User::getCreatedAt() const
 {
     return created_at_;
@@ -51,13 +51,13 @@ User::addMoment(const Moment& moment)
 }
 
 void
-User::removeMoment(uint32_t moment_id)
+User::removeMoment(IdType moment_id)
 {
     life_.removeMoment(moment_id);
 }
 
 const Moment&
-User::getMoment(const uint32_t moment_id) const
+User::getMoment(const IdType moment_id) const
 {
     return life_.getMoment(moment_id);
 }

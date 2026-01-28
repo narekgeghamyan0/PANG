@@ -14,15 +14,15 @@ class LifeManager
 public:
     LifeManager() = default;
     void addMoment(const Moment& moment);
-    bool removeMoment(uint32_t moment_id);
-    const Moment& getMoment(const uint32_t moment_id) const;
+    bool removeMoment(IdType moment_id);
+    const Moment& getMoment(const IdType moment_id) const;
     const Moment& getLastMoment() const;
     std::vector<std::reference_wrapper<const Moment>> getAllMoments() const;
     std::vector<std::reference_wrapper<const Moment>> findByType(const MomentType type) const;
-    uint32_t getMomentCount() const;
-    uint32_t getMomentCountByType(MomentType type) const;
+    IdType getMomentCount() const;
+    IdType getMomentCountByType(MomentType type) const;
 private:
-    std::unordered_map<uint32_t, Moment> moments_;
+    std::unordered_map<IdType, Moment> moments_;
 };
 
 

@@ -9,7 +9,10 @@
 #define QUERY_MAX_SIZE 256
 
 using ID = size_t;
+using Index = size_t;
 using string = std::string;
+using string_view = std::string_view;
+
 using SQL_string = string;
 
 // SQL Keywords
@@ -44,26 +47,28 @@ class DataBase
 public:
     DataBase(const string &db_path);
     ~DataBase();
-    void insert(const string &tableName, ID id, const string &image_path, const string &note);
-    void erase(const string &tableName, ID id);
+    void useTable(string_view tableName);
+    void insert(ID id, string_view image_path, string_view note);
+    void erase(ID id);
     string getImagePath(ID id);
     string getNote(ID id);
+    int isUpdated();
 
 private:
-    template<typename T> void getFromDB(const string& query, ID id, T& result);
-    void createDataBase(const string &db_path);
-    void executeCommand(const string& command);
-    void createTable(string &&user);
-    void createMemoryTable();
-    void createPrintAllQuery(const string &tableName, string &query);
-    void createSelectQuery(string &&item, string &&column, ID id, string &query);
-    void createQueryForImage(ID id, string &query);
-    void createQueryForNote(ID id, string &query);
-    void createInsertQuery(const string &tableName, ID id, const string &image_path, const string &note, string &query);
-    void createEraseQuery(const string &tableName, ID id, string &query);
+    void createDataBase(string_view db_path);
+    template<typename T> T getFromDB(string_view query);
+    void executeCommand(string_view command);
+    void createTableIfNotExists(string_view tableNmae);
+    string createPrintAllQuery();
+    string createSelectQuery(ID id, string_view item);
+    string createQueryForImage(ID id);
+    string createQueryForNote(ID id);
+    string createInsertQuery(ID id, string_view image_path, string_view note);
+    string createEraseQuery(ID id);
 
 private:
     sqlite3 *db_;
+    string currentTable_;
 };
 
 #endif // DB_DATA_BASE_H

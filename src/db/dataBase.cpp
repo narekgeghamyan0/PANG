@@ -1,17 +1,6 @@
-#include "db/dataBase.h"
-struct CallbackForCheck
-{ 
-    void operator()(void* data, int argc, char** argv, char** azColName) {
-        int i;
-        fprintf(stderr, "%s: ", (const char*)data);
+#include "dataBase.h"
 
-        for (i = 0; i < argc; i++) {
-            printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
-        }
-
-        printf("\n");
-    }
-} callbackForCheck;
+#include <cassert>
 
 
 template<typename CPP_Type>
@@ -66,8 +55,6 @@ DataBase::DataBase(const string& db_path)
 {
     // Open (or create) database
     createDataBase(db_path);
-    // Create table user if not exists
-    createMemoryTable();
 }
 
 DataBase::~DataBase()
@@ -75,169 +62,190 @@ DataBase::~DataBase()
     if (db_) {
         sqlite3_close(db_);
     }
-    std::cout << "Opened Database Successfully!" << std::endl;
-}
-
-template<typename T>
-void
-DataBase::getFromDB(const string& query, ID id, T& result)
-{
-    sqlite3_stmt* stmt = nullptr;
-    // Prepare the SQL statement
-    if (sqlite3_prepare_v2(db_, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-        throw std::runtime_error("ERROR 3: Failed to prepare statement for query: " + query);
-    }
-
-    // Bind the ID parameter
-    // TODO: Need variatic template for different types, counts of arguments and sqlite3_bind_xxx functions
-    sqlite3_bind_int(stmt, 1, id);
-
-    // Execute the statement
-    if (sqlite3_step(stmt) != SQLITE_ROW) {
-        result = sqlite3_column<T>(stmt, 0);
-        sqlite3_finalize(stmt);
-        throw std::runtime_error("ERROR 4: Failed to execute statement for query: " + query);
-    }
-
-    // Finalize the statement to release resources
-    sqlite3_finalize(stmt);
 }
 
 void
-DataBase::executeCommand(const string& command)
+DataBase::useTable(string_view tableName)
 {
-    char* errMsg = nullptr;
-    int rd = sqlite3_exec(db_, command.c_str(), 0, nullptr, &errMsg);
-    if (rd != SQLITE_OK) {
-        throw std::runtime_error("ERROR 2: Can't execute " + command);
+    if (currentTable_ != tableName) {
+        createTableIfNotExists(tableName);
+        currentTable_ = tableName;
     }
 }
 
 void
-DataBase::createDataBase(const string& db_path)
+DataBase::insert(ID id, string_view image_path, string_view note)
 {
-    if (sqlite3_open(db_path.c_str(), &db_) != SQLITE_OK) {
-        throw std::runtime_error("ERROR 1: Can't create database");
-    }
-}
-
-void
-DataBase::createTable(string&& tableName)
-{
-    // Create table query
-    const string createTable = 
-        "CREATE TABLE IF EXISTS " + tableName + "(" +
-        "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-        "note TEXT NOT NULL," +
-        "image_path TEXT NOT NULL";
-
-    executeCommand(createTable);
-}
-
-void
-DataBase::createMemoryTable()
-{
-    createTable("memories");
-}
-
-void
-DataBase::createPrintAllQuery(const string& tableName, string& query)
-{
-    query.reserve(QUERY_MAX_SIZE);
-
-    query.append("SELECT * FROM ")
-         .append(tableName)
-         .append(";");
-}
-
-void
-DataBase::createSelectQuery(string&& item, string&& column, ID id, string& query)
-{
-    query.reserve(QUERY_MAX_SIZE);
-
-    query.append("SELECT ")
-         .append(item)
-         .append(" FROM ")
-         .append(column)
-         .append(" WHERE id = ")
-         .append(std::to_string(id))
-         .append(";");
-}
-
-void
-DataBase::createInsertQuery(const string& tableName, ID id, const string& image_path, const string& note, string& query)
-{
-    query.reserve(QUERY_MAX_SIZE);
-
-    query.append("INSERT INTO")
-         .append(tableName)
-         .append(" VALUES(")
-         .append(std::to_string(id))
-         .append(", ")
-         .append(image_path)
-         .append(", ")
-         .append(note)
-         .append(");");
-}
-
-void
-DataBase::createEraseQuery(const string& tableName, ID id, string& query)
-{
-    query.reserve(QUERY_MAX_SIZE);
-
-    query.append("DELETE FROM ")
-         .append(tableName)
-         .append(" WHERE ID = ")
-         .append(std::to_string(id))
-         .append("; ");
-}
-
-void
-DataBase::createQueryForImage(ID id, string& query)
-{
-    return createSelectQuery("path", "images", id, query);
-}
-
-void
-DataBase::createQueryForNote(ID id, string& query)
-{
-    return createSelectQuery("note", "notes", id, query);
-}
-
-void
-DataBase::insert(const string& tableName, ID id, const string& image_path, const string& note)
-{
-    string query;
-    createInsertQuery(tableName, id, image_path, note, query);
+    string query = createInsertQuery(id, image_path, note);
     executeCommand(query);
 }
 
 void
-DataBase::erase(const string& tableName, ID id)
+DataBase::erase(ID id)
 {
-    string query;
-    createEraseQuery(tableName, id, query);
+    string query = createEraseQuery(id);
     executeCommand(query);
 }
 
 string
 DataBase::getImagePath(ID id)
 {
-    if (!db_) {
-        return "";
-    }
-    string query;
-    createQueryForImage(id, query);
-    return "TODO: Image path from db";
+    assert(db_ != nullptr);
+    string query = createQueryForImage(id);
+    string result = getFromDB<string>(query);
+    return result;
 }
 
 string
 DataBase::getNote(ID id)
 {
-    if (!db_) {
-        return "";
+    assert(db_ != nullptr);
+    string query = createQueryForNote(id);
+    string result = getFromDB<string>(query);
+    return result;
+}
+
+int
+DataBase::isUpdated()
+{
+    // If the result is not 1, that mean data base chenged at last execution.
+    return sqlite3_changes(db_);
+}
+
+void
+DataBase::createDataBase(string_view db_path)
+{
+    if (sqlite3_open(db_path.data(), &db_) != SQLITE_OK) {
+        throw std::runtime_error(string("ERROR 1: Can't create database: ") + db_path.data());
     }
+}
+
+template<typename T>
+T
+DataBase::getFromDB(string_view query)
+{
+    sqlite3_stmt* stmt = nullptr;
+    // Prepare the SQL statement
+    if (sqlite3_prepare_v2(db_, query.data(), -1, &stmt, nullptr) != SQLITE_OK) {
+        throw std::runtime_error(string("ERROR 3: Failed to prepare statement for query: ") + query.data());
+    }
+    // Bind the ID parameter
+    // TODO: Need variatic template for different types, counts of arguments and sqlite3_bind_xxx functions
+    // sqlite3_bind_int(stmt, 1, id);
+
+    T result = T();
+    // Execute the statement
+    if (sqlite3_step(stmt) == SQLITE_ROW) {
+        result = sqlite3_column<T>(stmt);
+    }
+
+    // Finalize the statement to release resources
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+void
+DataBase::executeCommand(string_view command)
+{
+    char* errMsg = nullptr;
+    int rd = sqlite3_exec(db_, command.data(), 0, nullptr, &errMsg);
+    if (rd != SQLITE_OK) {
+        string errStr("ERROR 2: ");
+        errStr.append(errMsg);
+        sqlite3_free(errMsg);
+        throw std::runtime_error(errStr);
+    }
+}
+
+void
+DataBase::createTableIfNotExists(string_view tableName)
+{
+    // Create table query
     string query;
-    createQueryForNote(id, query);
-    return "TODO: Note from db";
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("CREATE TABLE IF NOT EXISTS ")
+         .append(tableName.data())
+         .append("(")
+         .append("id INTEGER PRIMARY KEY,")
+         .append("image_path TEXT NOT NULL,")
+         .append("note TEXT NOT NULL);");
+
+    executeCommand(query);
+}
+
+string
+DataBase::createPrintAllQuery()
+{
+    string query;
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("SELECT * FROM ")
+         .append(currentTable_)
+         .append(";");
+
+    return query;
+}
+
+string
+DataBase::createSelectQuery(ID id, string_view item)
+{
+    string query;
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("SELECT ")
+         .append(item)
+         .append(" FROM ")
+         .append(currentTable_)
+         .append(" WHERE id = ")
+         .append(std::to_string(id))
+         .append(";");
+
+    return query;
+}
+
+string
+DataBase::createQueryForImage(ID id)
+{
+    return createSelectQuery(id, "image_path");
+}
+
+string
+DataBase::createQueryForNote(ID id)
+{
+    return createSelectQuery(id, "note");
+}
+
+string
+DataBase::createInsertQuery(ID id, string_view image_path, string_view note)
+{
+    string query;
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("INSERT INTO ")
+         .append(currentTable_)
+         .append(" VALUES(")
+         .append(std::to_string(id))
+         .append(", \'")
+         .append(image_path)
+         .append("\', \'")
+         .append(note)
+         .append("\');");
+
+    return query;
+}
+
+string
+DataBase::createEraseQuery(ID id)
+{
+    string query;
+    query.reserve(QUERY_MAX_SIZE);
+
+    query.append("DELETE FROM ")
+         .append(currentTable_)
+         .append(" WHERE ID = ")
+         .append(std::to_string(id))
+         .append("; ");
+
+    return query;
 }

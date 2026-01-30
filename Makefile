@@ -1,59 +1,90 @@
-CXX = g++
+# ===========================
+# Project Settings
+# ===========================
+progname := pang
+CXX := g++
+CXXFLAGS := -std=c++20 -Wall -Wextra -MMD -MP -I./src
+CXXSQLFLAGS := -lsqlite3
 
+SRC_DIR := src
+TEST_SRC_DIR := tests
+OBJ_DIR := build
+BIN_DIR := bin
+
+APP_TARGET := $(BIN_DIR)/$(progname)
+TEST_TARGET := $(BIN_DIR)/tests
+
+# Detect macOS brew prefix
 BREW_PREFIX := $(shell brew --prefix 2>/dev/null)
-
-CXXFLAGS = -std=c++20 -Wall -Wextra -I./src
 ifeq ($(BREW_PREFIX),)
-    # Linux case
+    # Linux: do nothing
 else
-    # macOS case
+    # macOS: include brew headers
     CXXFLAGS += -I$(BREW_PREFIX)/include
 endif
 
-CXXSQL = -lsqlite3
+# ===========================
+# Build Types
+# ===========================
+debug: CXXFLAGS += -g3
+debug: all
 
-SRC = \
-    src/main.cpp \
-    src/core/moment.cpp \
-    src/core/lifemanager.cpp \
-    src/core/user.cpp \
-    src/core/maincontroller.cpp \
-    src/db/dataBase.cpp
+release: CXXFLAGS += -O2 -DNDEBUG
+release: all
 
-DB_SRC = \
-    src/db/dataBase.cpp
+# ===========================
+# Source and Object Files
+# ===========================
+SOURCES := $(SRC_DIR)/main.cpp \
+           $(wildcard $(SRC_DIR)/core/*.cpp) \
+           $(wildcard $(SRC_DIR)/db/*.cpp) \
+           $(wildcard $(SRC_DIR)/qt/*.cpp)
 
-CORE_SRC = \
-    src/core/moment.cpp \
-    src/core/lifemanager.cpp \
-    src/core/user.cpp
+OBJS := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SOURCES))
 
-TEST_SRC = \
-    tests/test_moment.cpp \
-    tests/test_user.cpp \
-    tests/test_lifemanager.cpp \
-    tests/test_db.cpp
+TEST_SOURCES := $(wildcard $(TEST_SRC_DIR)/*.cpp)
+TEST_OBJS := $(patsubst $(TEST_SRC_DIR)/%.cpp,$(OBJ_DIR)/tests/%.o,$(TEST_SOURCES))
 
-BIN_DIR = bin
-APP_TARGET = $(BIN_DIR)/pang
-TEST_TARGET = $(BIN_DIR)/tests
+# ===========================
+# Pattern Rules
+# ===========================
+# Compile main source files
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-.PHONY: all app tests test clean
+# Compile test source files
+$(OBJ_DIR)/tests/%.o: $(TEST_SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-all: app
+# ===========================
+# Targets
+# ===========================
+all: $(APP_TARGET)
 
 $(BIN_DIR):
-	mkdir -p $(BIN_DIR)
+	@mkdir -p $(BIN_DIR)
 
-app: $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(SRC) -o $(APP_TARGET) $(CXXSQL)
+$(APP_TARGET): $(OBJS) | $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(CXXSQLFLAGS)
 
-tests: $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(CORE_SRC) $(DB_SRC) $(TEST_SRC) \
-	    -o $(TEST_TARGET) $(CXXSQL)
+$(TEST_TARGET): $(TEST_OBJS) $(OBJS) | $(BIN_DIR)
+	$(CXX) $(CXXFLAGS) $^ -o $@ $(CXXSQLFLAGS)
 
-test: tests
+# ===========================
+# Include auto-generated header dependencies
+# ===========================
+-include $(OBJS:.o=.d)
+-include $(TEST_OBJS:.o=.d)
+
+# ===========================
+# Phony Targets
+# ===========================
+.PHONY: clean test
+
+test: $(TEST_TARGET)
 	./$(TEST_TARGET)
 
 clean:
-	rm -rf $(BIN_DIR)
+	rm -rf $(BIN_DIR) $(OBJ_DIR)
